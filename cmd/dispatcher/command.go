@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/Eri-stay/practice-kafka/config"
 	"github.com/Eri-stay/practice-kafka/db"
@@ -31,28 +32,30 @@ func runDispatcher(ctx *cli.Context, cfg *config.Config) error {
 	}
 	defer storage.Close()
 
-	producer, err := kafka.NewProducer(cfg.KafkaBrokers)
+	producer, err := kafka.NewProducer(cfg)
 	if err != nil {
 		return fmt.Errorf("create Kafka producer: %w", err)
 	}
 	defer producer.Close()
 
 	emails_ch := make(chan entities.Email)
+	timeInterval, err := strconv.Atoi(cfg.DispatcherInterval)
+	if err != nil {
+		return fmt.Errorf("convert time interval: %v", err)
+	}
 
-	dispatcher := Dispatcher{
-		EmailsDB: db.Emails{DB: storage.DB},
-		Produser: producer,
-		Channel:  emails_ch,
-		Context:  ctx.Context,
-		Config:   cfg,
+	dispatcher := dispatcher{
+		emailsDB:     db.Emails{DB: storage.DB},
+		channel:      emails_ch,
+		context:      ctx.Context,
+		timeInterval: timeInterval,
 	}
 
 	// retrieve all emails for sending
 	go dispatcher.RetrieveEmailsToSend()
 
-	for email := range dispatcher.Channel {
-		if err := dispatcher.DispatchToSender(email); err != nil {
-			return fmt.Errorf("dispatch email: %v", err)
+	for email := range dispatcher.channel {
+		if err := producer.ExecutionRequestEvent(email); err != nil {
 		}
 	}
 	return nil

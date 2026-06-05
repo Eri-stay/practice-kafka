@@ -2,8 +2,6 @@ package ingester
 
 import (
 	"fmt"
-	"os/signal"
-	"syscall"
 
 	"github.com/Eri-stay/practice-kafka/config"
 	"github.com/Eri-stay/practice-kafka/db"
@@ -27,29 +25,30 @@ func runIngester(c *cli.Context, cfg *config.Config) error {
 	}
 	defer storage.Close()
 
-	consumer, err := kafka.NewConsumer(cfg.KafkaBrokers, cfg.KafkaConsumerGroup)
+	consumer, err := kafka.NewConsumer(cfg, cfg.KafkaConsumerIngester)
 	if err != nil {
 		return fmt.Errorf("create Kafka consumer: %w", err)
 	}
 	defer consumer.Close()
 
+	requestCh := consumer.RequestsStream(c.Context)
+
 	emails_st := &db.Emails{DB: storage.DB}
-	handler := &Handler{db: emails_st}
-	ctx, cancel := signal.NotifyContext(c.Context, syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+	ingester := &Ingester{db: emails_st}
 
-	// Use a channel to synchronize consumer shutdown
-	doneCh := make(chan struct{})
-	go func() {
-		defer close(doneCh)
-		if err := consumer.Consume(ctx, cfg.TopicEmailRequests, handler.SaveEmailRequest); err != nil {
-			fmt.Printf("consume error: %v\n", err)
+	for {
+		select {
+		case <-c.Done():
+			return nil
+		case email, ok := <-requestCh:
+			if !ok {
+				return nil
+			}
+
+			if err := ingester.SaveEmailRequest(c.Context, email); err != nil {
+				return fmt.Errorf("save email request: %w", err)
+			}
+
 		}
-	}()
-
-	<-ctx.Done() // Wait for termination signal
-
-	<-doneCh
-
-	return nil
+	}
 }

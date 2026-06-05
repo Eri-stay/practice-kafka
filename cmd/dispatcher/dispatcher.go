@@ -2,26 +2,26 @@ package dispatcher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/Eri-stay/practice-kafka/config"
 	"github.com/Eri-stay/practice-kafka/db"
 	"github.com/Eri-stay/practice-kafka/entities"
-	"github.com/Eri-stay/practice-kafka/messenger"
 )
 
-type Dispatcher struct {
-	EmailsDB db.Emails
-	Channel  chan entities.Email
-	Context  context.Context
-	Produser messenger.Producer
-	Config   *config.Config
+type Producer interface {
+	ExecutionRequestEvent(event entities.Email) error
 }
 
-func (d *Dispatcher) RetrieveEmailsToSend() error {
+type dispatcher struct {
+	emailsDB     db.Emails
+	channel      chan entities.Email
+	context      context.Context
+	timeInterval int
+}
+
+func (d *dispatcher) RetrieveEmailsToSend() error {
 	ticker_p := time.NewTicker(2 * time.Second)
 	ticker_f := time.NewTicker(10 * time.Second)
 	defer ticker_f.Stop()
@@ -29,43 +29,30 @@ func (d *Dispatcher) RetrieveEmailsToSend() error {
 
 	for {
 		select {
-		case <-d.Context.Done():
-			close(d.Channel)
+		case <-d.context.Done():
+			close(d.channel)
 			return nil
 
 		case <-ticker_p.C:
-			emails, err := d.EmailsDB.RetrievePending(d.Context, EmailLimitPending)
+			emails, err := d.emailsDB.RetrievePending(d.context, EmailLimitPending)
 			if err != nil {
 				log.Printf("Failed to fetch pending emails: %w", err)
 				return fmt.Errorf("fetch pending emails: %w", err)
 			}
 
 			for _, e := range emails {
-				d.Channel <- e
+				d.channel <- e
 			}
 
 		case <-ticker_f.C:
-			// emails, err := d.EmailsDB.RetrieveFailed(d.Context, EmailLimitFailed)
-			// if err != nil {
-			// return fmt.Errorf("fetch fauled emails: %w", err)
-			// }
+			emails, err := d.emailsDB.RetrieveTempFailed(d.context, d.timeInterval, EmailLimitFailed)
+			if err != nil {
+				return fmt.Errorf("fetch fauled emails: %w", err)
+			}
 
-			// for _, e := range emails {
-			// 	d.Ch <- e
-			// }
+			for _, e := range emails {
+				d.channel <- e
+			}
 		}
 	}
-}
-
-func (d *Dispatcher) DispatchToSender(email entities.Email) error {
-	bytes, err := json.Marshal(email)
-	if err != nil {
-		return fmt.Errorf("marshal email: %w", err)
-	}
-
-	if err := d.Produser.Produce(d.Config.TopicEmailExecute, bytes); err != nil {
-		return fmt.Errorf("produse an execute request: %w", err)
-	}
-
-	return nil
 }

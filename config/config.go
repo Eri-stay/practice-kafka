@@ -8,12 +8,16 @@ import (
 )
 
 type Config struct {
-	DbURL              string
-	KafkaBrokers       []string
-	KafkaConsumerGroup string
-	TopicEmailRequests string
-	TopicEmailExecute  string
-	TopicEmailResults  string
+	DbURL                      string
+	KafkaBrokers               []string
+	KafkaConsumerMockRequester string
+	KafkaConsumerIngester      string
+	KafkaConsumerDispatcher    string
+	KafkaConsumerSender        string
+	KafkaConsumerWriter        string
+	TopicEmailRequests         string
+	TopicEmailExecute          string
+	TopicEmailResults          string
 
 	SMTPHost string
 	SMTPPort string
@@ -38,9 +42,14 @@ func LoadConfig() (*Config, error) {
 	)
 
 	return &Config{
-		DbURL:              dbURL,
-		KafkaBrokers:       []string{os.Getenv("KAFKA_BROKERS")},
-		KafkaConsumerGroup: os.Getenv("KAFKA_CONSUMER_GROUP"),
+		DbURL:                      dbURL,
+		KafkaBrokers:               []string{os.Getenv("KAFKA_BROKERS")},
+		KafkaConsumerMockRequester: os.Getenv("KAFKA_CONSUMER_MOCK_REQUESTER"),
+		KafkaConsumerIngester:      os.Getenv("KAFKA_CONSUMER_INGESTER"),
+		KafkaConsumerDispatcher:    os.Getenv("KAFKA_CONSUMER_DISPATCHER"),
+		KafkaConsumerSender:        os.Getenv("KAFKA_CONSUMER_SENDER"),
+		KafkaConsumerWriter:        os.Getenv("KAFKA_CONSUMER_RESULT_WRITER"),
+
 		TopicEmailRequests: os.Getenv("TOPIC_EMAIL_REQUESTS"),
 		TopicEmailExecute:  os.Getenv("TOPIC_EMAIL_EXECUTE"),
 		TopicEmailResults:  os.Getenv("TOPIC_EMAIL_RESULTS"),

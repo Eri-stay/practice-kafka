@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Eri-stay/practice-kafka/cmd/dispatcher"
 	"github.com/Eri-stay/practice-kafka/cmd/ingester"
 	"github.com/Eri-stay/practice-kafka/cmd/mock_email_requester"
+	"github.com/Eri-stay/practice-kafka/cmd/result_recorder"
+	"github.com/Eri-stay/practice-kafka/cmd/sender"
 	"github.com/Eri-stay/practice-kafka/config"
 	"github.com/urfave/cli/v2"
 )
@@ -25,11 +30,15 @@ func main() {
 			mock_email_requester.Command(cfg),
 			ingester.Command(cfg),
 			dispatcher.Command(cfg),
-			// sender.Command(cfg),
-			// result_handler.Command(cfg),
+			sender.Command(cfg),
+			result_recorder.Command(cfg),
 		},
 	}
-	if err := app.Run(os.Args); err != nil {
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	if err := app.RunContext(ctx, os.Args); err != nil {
 		log.Printf("Failed to run a program: ", err)
 	}
 }

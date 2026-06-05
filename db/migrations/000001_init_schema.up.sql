@@ -3,7 +3,7 @@ CREATE TYPE email_status AS ENUM (
     'in_progress',
     'sent',
     'failed',
-    'totaly_failed'
+    'totally_failed'
 );
 
 CREATE TYPE execution_status AS ENUM (

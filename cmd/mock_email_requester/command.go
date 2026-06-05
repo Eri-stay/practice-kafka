@@ -1,7 +1,6 @@
 package mock_email_requester
 
 import (
-	"encoding/json"
 	"log"
 	"time"
 
@@ -45,7 +44,7 @@ func runMockRequester(c *cli.Context, cfg *config.Config) error {
 	schedule := c.Int("schedule")
 
 	// Initialize Kafka producer
-	producer, err := kafka.NewProducer(cfg.KafkaBrokers)
+	producer, err := kafka.NewProducer(cfg)
 	if err != nil {
 		log.Printf("Failed to run a program: ", err)
 	}
@@ -60,13 +59,7 @@ func runMockRequester(c *cli.Context, cfg *config.Config) error {
 			request.ScheduleTime = &scheduleTime
 		}
 
-		bytes, err := json.Marshal(request)
-		if err != nil {
-			log.Printf("Failed to marshal email request: %v", err)
-			continue
-		}
-
-		if err := producer.Produce(cfg.TopicEmailRequests, bytes); err != nil {
+		if err := producer.EmailRequestEvent(request); err != nil {
 			log.Printf("Failed to produce message: %v", err)
 		} else {
 			log.Printf("Produced email request %d: \"%s\"", i+1, request.Subject)

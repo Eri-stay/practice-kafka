@@ -26,7 +26,6 @@ func generateRandomEmailRequestWithSchedule(isEmailValid bool, minutes int) enti
 }
 
 func generateRandomEmailAdress(isValid bool) string {
-	rand.Seed(time.Now().UnixNano())
 	if isValid {
 		emails := []string{
 			//"maria.chep.ua@gmail.com",
@@ -39,18 +38,17 @@ func generateRandomEmailAdress(isValid bool) string {
 		for i := 0; i < 10; i++ {
 			email += string(letters[rand.Intn(len(letters))])
 		}
-		return email + "@example.com"
+		return email + "example.com"
 	}
 }
 
 func generateRandomSubject() string {
-	rand.Seed(time.Now().UnixNano())
 	subjects := []string{
-		"Meeting Reminder",
-		"Project Update",
-		"Feedback Request",
-		"Welcome Aboard",
-		"Event Invitation",
+		"~ Meeting Reminder",
+		"~ Project Update",
+		"~ Feedback Request",
+		"~ Welcome Aboard",
+		"~ Event Invitation",
 	}
 	return subjects[rand.Intn(len(subjects))] + " " + time.Now().Format("2006-01-02 15:04:05")
 }
