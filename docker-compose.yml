@@ -1,19 +1,26 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
+    networks:
+      - internal
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: email_db
     ports:
-      - "5432:5432"
+      - "0.0.0.0:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres  -d email_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:latest
+    networks:
+      - internal
     command:
       - redpanda
       - start
@@ -23,9 +30,104 @@ services:
       - --node-id 0
       - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
       - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://192.168.0.178:9092
+    volumes:
+      - redpanda:/var/lib/redpanda/data
     ports:
       - "9092:9092"
       - "29092:29092"
 
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v3.6.0
+    networks:
+      - internal
+    entrypoint: /bin/sh
+    command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:9092"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://redpanda:9644"]
+        schemaRegistry:
+          enabled: true
+          urls:
+            - "http://redpanda:8081"
+    ports:
+      - 0.0.0.0:17080:8080
+    depends_on:
+      - redpanda
+
+  # --- Microservices ---
+
+  ingester:
+    build: .
+    command: ["ingester"]
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      KAFKA_BROKERS: redpanda:29092
+
+  dispatcher:
+    build: .
+    command: ["dispatcher"]
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      KAFKA_BROKERS: redpanda:29092
+
+  sender:
+    build: .
+    command: ["sender"]
+    networks:
+      - internal
+    depends_on:
+      redpanda:
+        condition: service_started
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      KAFKA_BROKERS: redpanda:29092
+
+  recorder:
+    build: .
+    command: ["recorder"]
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      KAFKA_BROKERS: redpanda:29092
+
 volumes:
   pgdata:
+  redpanda:
+
+networks:
+  internal:
+    driver: bridge

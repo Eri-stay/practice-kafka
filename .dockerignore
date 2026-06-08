@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Environment variables
+.env
+*.env
+
+# Local compiled binaries
+*.exe
+*.out
+email-service
+bin/
+Makefile
+
+# IDE and Editor folders
+.idea/
+.vscode/
+
+# Go vendor directory 
+vendor/
+
+# OS generated files
+.DS_Store
+
+# Docker configurations themselves
+Dockerfile
+docker-compose.yml
+.dockerignore

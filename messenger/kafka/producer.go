@@ -82,10 +82,10 @@ func (p *saramaProducer) ExecutionRequestEvent(event entities.Email) error {
 
 func (p *saramaProducer) ExecutionResultEvent(event entities.Result) error {
 	result := result{
-		EmailId:    event.EmailId,
-		Status:     status(event.Status),
-		ErrorMsg:   event.ErrorMsg,
-		Created_at: event.Created_at,
+		EmailId:     event.EmailId,
+		Status:      status(event.Status),
+		ErrorMsg:    event.ErrorMsg,
+		Executed_at: event.Executed_at,
 	}
 	bytes, err := json.Marshal(result)
 	if err != nil {

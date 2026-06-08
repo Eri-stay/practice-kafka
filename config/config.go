@@ -29,7 +29,7 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	// Load .env file (ignoring error gracefully if file is missing in prod)
+	// Load .env file (ignoring error if file is missing in prod)
 	_ = godotenv.Load()
 
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",

@@ -34,7 +34,7 @@ func runIngester(c *cli.Context, cfg *config.Config) error {
 	requestCh := consumer.RequestsStream(c.Context)
 
 	emails_st := &db.Emails{DB: storage.DB}
-	ingester := &Ingester{db: emails_st}
+	ingester := &ingester{db: emails_st}
 
 	for {
 		select {

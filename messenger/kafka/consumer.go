@@ -179,10 +179,10 @@ func (c *saramaConsumer) ResultsStream(ctx context.Context) <-chan entities.Resu
 				}
 
 				res := entities.Result{
-					EmailId:    payload.EmailId,
-					Status:     string(payload.Status),
-					ErrorMsg:   payload.ErrorMsg,
-					Created_at: payload.Created_at,
+					EmailId:     payload.EmailId,
+					Status:      string(payload.Status),
+					ErrorMsg:    payload.ErrorMsg,
+					Executed_at: payload.Executed_at,
 				}
 
 				out <- res

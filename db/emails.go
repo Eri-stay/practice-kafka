@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/Eri-stay/practice-kafka/entities"
 	"github.com/lib/pq"
@@ -15,9 +16,9 @@ type Emails struct {
 
 func (e *Emails) Add(ctx context.Context, req *entities.Request) (int, error) {
 	query := `
-	INSERT INTO emails (recipient, subject, body, schedule_time)
-	VALUES ($1, $2, $3, $4)
-	RETURNING id
+		INSERT INTO emails (recipient, subject, body, schedule_time)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
 	`
 	var id int
 	err := e.DB.QueryRowContext(ctx, query, req.Recipient, req.Subject, req.Body, req.ScheduleTime).Scan(&id)
@@ -34,11 +35,11 @@ func (e *Emails) RetrievePending(ctx context.Context, limit int) ([]entities.Ema
 	}
 	defer tx.Rollback()
 	query := `
-	SELECT id, recipient, subject, body
-	FROM emails
-	WHERE status = 'pending' AND (schedule_time IS NULL OR schedule_time <= NOW())
-	LIMIT $1
-	FOR UPDATE SKIP LOCKED;
+		SELECT id, recipient, subject, body
+		FROM emails
+		WHERE status = 'pending' AND (schedule_time IS NULL OR schedule_time <= NOW())
+		LIMIT $1
+		FOR UPDATE SKIP LOCKED;
 	`
 	rows, err := tx.QueryContext(ctx, query, limit)
 	if err != nil {
@@ -70,9 +71,9 @@ func (e *Emails) RetrievePending(ctx context.Context, limit int) ([]entities.Ema
 	}
 
 	query = `
-	UPDATE emails
-	SET  status = 'in_progress'
-	WHERE id = ANY ($1)
+		UPDATE emails
+		SET  status = 'in_progress'
+		WHERE id = ANY ($1)
 	`
 	_, err = tx.ExecContext(ctx, query, pq.Array(ids))
 	if err != nil {
@@ -93,16 +94,16 @@ func (e *Emails) RetrieveTempFailed(ctx context.Context, minutes, limit int) ([]
 	}
 	defer tx.Rollback()
 	query := `
-	SELECT id, recipient, subject, body
-	FROM emails
-	WHERE status = 'failed'
-	AND (
-		SELECT MAX(created_at) 
-		FROM executions 
-		WHERE email_id = emails.id
-	) < NOW() - ($1 * INTERVAL '1 minute')
-	LIMIT $2 
-	FOR UPDATE SKIP LOCKED;
+		SELECT id, recipient, subject, body
+		FROM emails
+		WHERE status = 'failed'
+		AND (
+			SELECT MAX(created_at) 
+			FROM executions 
+			WHERE email_id = emails.id
+		) < NOW() - ($1 * INTERVAL '1 minute')
+		LIMIT $2 
+		FOR UPDATE SKIP LOCKED;
 	`
 	rows, err := tx.QueryContext(ctx, query, minutes, limit)
 	if err != nil {
@@ -134,9 +135,9 @@ func (e *Emails) RetrieveTempFailed(ctx context.Context, minutes, limit int) ([]
 	}
 
 	query = `
-	UPDATE emails
-	SET  status = 'in_progress'
-	WHERE id = ANY ($1)
+		UPDATE emails
+		SET  status = 'in_progress'
+		WHERE id = ANY ($1)
 	`
 	_, err = tx.ExecContext(ctx, query, pq.Array(ids))
 	if err != nil {
@@ -148,4 +149,30 @@ func (e *Emails) RetrieveTempFailed(ctx context.Context, minutes, limit int) ([]
 		return nil, fmt.Errorf("commit transaction: %w", err)
 	}
 	return emails, nil
+}
+
+func (e *Emails) UpdateStatus(ctx context.Context, id int, status string) error {
+	query := `
+		UPDATE emails
+		SET status = $1
+		WHERE id = $2
+	`
+	_, err := e.DB.ExecContext(ctx, query, status, id)
+	if err != nil {
+		return fmt.Errorf("update email status: %w", err)
+	}
+	return nil
+}
+
+func (e *Emails) MarkAsSent(ctx context.Context, id int, sent_at *time.Time) error {
+	query := `
+		UPDATE emails
+		SET status = 'sent', sent_at = COALESCE($1, NOW())
+		WHERE id = $2
+	`
+	_, err := e.DB.ExecContext(ctx, query, sent_at, id)
+	if err != nil {
+		return fmt.Errorf("mark email as sent: %w", err)
+	}
+	return nil
 }

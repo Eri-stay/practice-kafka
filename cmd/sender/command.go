@@ -16,7 +16,7 @@ func Command(cfg *config.Config) *cli.Command {
 	return &cli.Command{
 		Name:    "sender",
 		Aliases: []string{"send"},
-		Usage:   "Receive messages from kafka (dispatcher) and send to recipients",
+		Usage:   "Receive messages from kafka (dispatcher and send to recipients)",
 		Action:  func(c *cli.Context) error { return runSender(c, cfg) },
 	}
 }
@@ -48,10 +48,10 @@ func runSender(c *cli.Context, cfg *config.Config) error {
 		return fmt.Errorf("create smtp client: %w", err)
 	}
 
-	sender := Sender{
-		Cfg:      cfg,
-		Producer: producer,
-		Client:   client,
+	sender := sender{
+		cfg:      cfg,
+		producer: producer,
+		client:   client,
 	}
 
 	for {

@@ -11,8 +11,8 @@ const (
 )
 
 type Result struct {
-	EmailId    int
-	Status     string
-	ErrorMsg   string
-	Created_at *time.Time
+	EmailId     int
+	Status      string
+	ErrorMsg    string
+	Executed_at *time.Time
 }

@@ -25,8 +25,8 @@ const (
 )
 
 type result struct {
-	EmailId    int        `json:"email_id"`
-	Status     status     `json:"status"`
-	ErrorMsg   string     `json:"error_msg"`
-	Created_at *time.Time `json:"created_at"`
+	EmailId     int        `json:"email_id"`
+	Status      status     `json:"status"`
+	ErrorMsg    string     `json:"error_msg"`
+	Executed_at *time.Time `json:"executed_at"`
 }

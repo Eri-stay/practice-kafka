@@ -18,25 +18,25 @@ const (
 	ErrDeliveryFailed   = wherr.Error("smtp delivery failed")
 )
 
-type Sender struct {
-	Cfg      *config.Config
-	Producer messenger.Producer
-	Client   *mail.Client
+type sender struct {
+	cfg      *config.Config
+	producer messenger.Producer
+	client   *mail.Client
 }
 
-func (s *Sender) SendEmail(ctx context.Context, email entities.Email) error {
+func (s *sender) SendEmail(ctx context.Context, email entities.Email) error {
 	m := mail.NewMsg()
 
 	if err := m.To(email.Recipient); err != nil {
 		return fmt.Errorf("%w: recipient: %s", ErrInvalidParameter, err.Error())
 	}
-	if err := m.From(s.Cfg.SMTPUser); err != nil {
+	if err := m.From(s.cfg.SMTPUser); err != nil {
 		return fmt.Errorf("%w: sender: %s", ErrInvalidParameter, err.Error())
 	}
 	m.Subject(email.Subject)
 	m.SetBodyString(mail.TypeTextPlain, email.Body)
 
-	if err := s.Client.DialAndSend(m); err != nil {
+	if err := s.client.DialAndSend(m); err != nil {
 		// retry later
 		return fmt.Errorf("%w: %s", ErrDeliveryFailed, err.Error())
 	}
@@ -45,15 +45,16 @@ func (s *Sender) SendEmail(ctx context.Context, email entities.Email) error {
 	return nil
 }
 
-func (s *Sender) ProduceResult(emailId int, status entities.Status, errorMsg string) error {
+func (s *sender) ProduceResult(emailId int, status entities.Status, errorMsg string) error {
+	now := time.Now()
 	res := entities.Result{
-		EmailId:    emailId,
-		Status:     string(status),
-		ErrorMsg:   errorMsg,
-		Created_at: &time.Time{},
+		EmailId:     emailId,
+		Status:      string(status),
+		ErrorMsg:    errorMsg,
+		Executed_at: &now,
 	}
 
-	if err := s.Producer.ExecutionResultEvent(res); err != nil {
+	if err := s.producer.ExecutionResultEvent(res); err != nil {
 		return fmt.Errorf("produce execution result: %w", err)
 	}
 

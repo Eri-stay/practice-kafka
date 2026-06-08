@@ -8,19 +8,12 @@ import (
 	"github.com/Eri-stay/practice-kafka/entities"
 )
 
-type Ingester struct {
+type ingester struct {
 	db *db.Emails
 }
 
-func (i *Ingester) SaveEmailRequest(ctx context.Context, req entities.Request) error {
-	dbReq := entities.Request{
-		Recipient:    req.Recipient,
-		Subject:      req.Subject,
-		Body:         req.Body,
-		ScheduleTime: req.ScheduleTime,
-	}
-
-	if _, err := i.db.Add(ctx, &dbReq); err != nil {
+func (i *ingester) SaveEmailRequest(ctx context.Context, req entities.Request) error {
+	if _, err := i.db.Add(ctx, &req); err != nil {
 		return fmt.Errorf("write to db: %w", err)
 	}
 
