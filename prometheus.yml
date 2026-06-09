@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'ingester'
+    static_configs:
+      - targets: 
+        - 'ingester:8080'
+
+  - job_name: 'dispatcher'
+    static_configs:
+      - targets: 
+        - 'dispatcher:8080'
+
+  - job_name: 'sender'
+    static_configs:
+      - targets: 
+        - 'sender:8080'
+
+  - job_name: 'recorder'
+    static_configs:
+      - targets: 
+        - 'recorder:8080'

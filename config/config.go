@@ -24,6 +24,8 @@ type Config struct {
 	SMTPUser string
 	SMTPPass string
 
+	MetricsPort string
+
 	DispatcherInterval string
 	MaxRetries         string
 }
@@ -58,6 +60,8 @@ func LoadConfig() (*Config, error) {
 		SMTPPort: os.Getenv("SMTP_PORT"),
 		SMTPUser: os.Getenv("SMTP_USER"),
 		SMTPPass: os.Getenv("SMTP_PASS"),
+
+		MetricsPort: os.Getenv("METRICS_PORT"),
 
 		DispatcherInterval: os.Getenv("DISPATCHER_INTERVAL"),
 		MaxRetries:         os.Getenv("MAX_RETRIES"),

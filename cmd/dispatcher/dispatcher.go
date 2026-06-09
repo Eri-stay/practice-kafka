@@ -3,11 +3,11 @@ package dispatcher
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/Eri-stay/practice-kafka/db"
 	"github.com/Eri-stay/practice-kafka/entities"
+	"github.com/Eri-stay/practice-kafka/pkg/metrics"
 )
 
 type Producer interface {
@@ -36,9 +36,10 @@ func (d *dispatcher) RetrieveEmailsToSend() error {
 		case <-ticker_p.C:
 			emails, err := d.emailsDB.RetrievePending(d.context, EmailLimitPending)
 			if err != nil {
-				log.Printf("Failed to fetch pending emails: %w", err)
 				return fmt.Errorf("fetch pending emails: %w", err)
 			}
+
+			metrics.DispatcherBatchSize.WithLabelValues("pending").Observe(float64(len(emails)))
 
 			for _, e := range emails {
 				d.channel <- e
@@ -49,6 +50,8 @@ func (d *dispatcher) RetrieveEmailsToSend() error {
 			if err != nil {
 				return fmt.Errorf("fetch fauled emails: %w", err)
 			}
+
+			metrics.DispatcherBatchSize.WithLabelValues("failed").Observe(float64(len(emails)))
 
 			for _, e := range emails {
 				d.channel <- e

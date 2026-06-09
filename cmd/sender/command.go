@@ -8,6 +8,7 @@ import (
 	"github.com/Eri-stay/practice-kafka/config"
 	"github.com/Eri-stay/practice-kafka/entities"
 	"github.com/Eri-stay/practice-kafka/messenger/kafka"
+	"github.com/Eri-stay/practice-kafka/pkg/metrics"
 	"github.com/urfave/cli/v2"
 	"github.com/wneessen/go-mail"
 )
@@ -47,6 +48,8 @@ func runSender(c *cli.Context, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("create smtp client: %w", err)
 	}
+
+	go metrics.StartMetricsServer(cfg.MetricsPort)
 
 	sender := sender{
 		cfg:      cfg,

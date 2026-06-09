@@ -6,6 +6,7 @@ import (
 
 	"github.com/Eri-stay/practice-kafka/db"
 	"github.com/Eri-stay/practice-kafka/entities"
+	"github.com/Eri-stay/practice-kafka/pkg/metrics"
 )
 
 type recorder struct {
@@ -19,9 +20,11 @@ func (r *recorder) SaveExecResult(ctx context.Context, res entities.Result) erro
 
 	switch res.Status {
 	case string(entities.StatusSuccess):
+		metrics.FinalEmailOutcome.WithLabelValues("sent").Inc()
 		emailStatus = "sent"
 
 	case string(entities.StatusPermFail):
+		metrics.FinalEmailOutcome.WithLabelValues("totally_failed").Inc()
 		emailStatus = "totally_failed"
 
 	case string(entities.StatusTempFail):
@@ -31,6 +34,7 @@ func (r *recorder) SaveExecResult(ctx context.Context, res entities.Result) erro
 			return err
 		}
 		if count >= r.maxRetries {
+			metrics.FinalEmailOutcome.WithLabelValues("totally_failed").Inc()
 			emailStatus = "totally_failed"
 		} else {
 			emailStatus = "failed"

@@ -8,6 +8,7 @@ import (
 	"github.com/Eri-stay/practice-kafka/config"
 	"github.com/Eri-stay/practice-kafka/db"
 	"github.com/Eri-stay/practice-kafka/messenger/kafka"
+	"github.com/Eri-stay/practice-kafka/pkg/metrics"
 	"github.com/urfave/cli/v2"
 )
 
@@ -41,6 +42,8 @@ func runRecorder(c *cli.Context, cfg *config.Config) error {
 	resultsCh := consumer.ResultsStream(c.Context)
 	executionsDB := &db.Executions{DB: storage.DB}
 	emailsDB := &db.Emails{DB: storage.DB}
+
+	go metrics.StartMetricsServer(cfg.MetricsPort)
 
 	recorder := recorder{
 		dbEmails:     emailsDB,
