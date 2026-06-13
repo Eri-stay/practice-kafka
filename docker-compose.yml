@@ -123,7 +123,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       KAFKA_BROKERS: redpanda:29092
-prometheus:
+
+  prometheus:
     image: prom/prometheus:latest
     networks:
       - internal
@@ -133,7 +134,7 @@ prometheus:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - promdata:/prometheus
 
-grafana:
+  grafana:
     image: grafana/grafana:latest
     networks:
       - internal
