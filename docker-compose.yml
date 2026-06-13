@@ -29,7 +29,7 @@ services:
       - --overprovisioned
       - --node-id 0
       - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
-      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://192.168.0.178:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://10.151.6.210:9092
     volumes:
       - redpanda:/var/lib/redpanda/data
     ports:
@@ -123,8 +123,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       KAFKA_BROKERS: redpanda:29092
-
-  prometheus:
+prometheus:
     image: prom/prometheus:latest
     networks:
       - internal
@@ -132,8 +131,9 @@ services:
       - "0.0.0.0:9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - promdata:/prometheus
 
-  grafana:
+grafana:
     image: grafana/grafana:latest
     networks:
       - internal
@@ -142,11 +142,15 @@ services:
     depends_on:
       - prometheus
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin 
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafanadata:/var/lib/grafana
 
 volumes:
   pgdata:
   redpanda:
+  promdata:
+  grafanadata:
 
 networks:
   internal:

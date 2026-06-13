@@ -35,6 +35,7 @@ func (r *recorder) SaveExecResult(ctx context.Context, res entities.Result) erro
 		}
 		if count >= r.maxRetries {
 			metrics.FinalEmailOutcome.WithLabelValues("totally_failed").Inc()
+			res.Status = "totally_failed"
 			emailStatus = "totally_failed"
 		} else {
 			emailStatus = "failed"
