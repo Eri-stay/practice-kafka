@@ -6,6 +6,7 @@ import (
 	"github.com/Eri-stay/practice-kafka/config"
 	"github.com/Eri-stay/practice-kafka/db"
 	"github.com/Eri-stay/practice-kafka/messenger/kafka"
+	"github.com/Eri-stay/practice-kafka/pkg/metrics"
 	"github.com/urfave/cli/v2"
 )
 
@@ -32,6 +33,8 @@ func runIngester(c *cli.Context, cfg *config.Config) error {
 	defer consumer.Close()
 
 	requestCh := consumer.RequestsStream(c.Context)
+
+	go metrics.StartMetricsServer(cfg.MetricsPort)
 
 	emails_st := &db.Emails{DB: storage.DB}
 	ingester := &ingester{db: emails_st}

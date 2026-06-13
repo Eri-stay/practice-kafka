@@ -28,7 +28,10 @@ func generateRandomEmailRequestWithSchedule(isEmailValid bool, minutes int) enti
 func generateRandomEmailAdress(isValid bool) string {
 	if isValid {
 		emails := []string{
-			//"maria.chep.ua@gmail.com",
+			"gudokzlt090219@gmail.com",
+			"mafiaonlinem@gmail.com",
+			"mchepeluk@gmail.com",
+			"m.chepeliuk@zol-2.schools.lviv.ua",
 			"marichka.i.am@gmail.com",
 		}
 		return emails[rand.Intn(len(emails))]

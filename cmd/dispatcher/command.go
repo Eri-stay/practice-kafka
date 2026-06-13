@@ -8,6 +8,7 @@ import (
 	"github.com/Eri-stay/practice-kafka/db"
 	"github.com/Eri-stay/practice-kafka/entities"
 	"github.com/Eri-stay/practice-kafka/messenger/kafka"
+	"github.com/Eri-stay/practice-kafka/pkg/metrics"
 	"github.com/urfave/cli/v2"
 )
 
@@ -50,6 +51,8 @@ func runDispatcher(ctx *cli.Context, cfg *config.Config) error {
 		context:      ctx.Context,
 		timeInterval: timeInterval,
 	}
+
+	go metrics.StartMetricsServer(cfg.MetricsPort)
 
 	// retrieve all emails for sending
 	go dispatcher.RetrieveEmailsToSend()
